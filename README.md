@@ -77,15 +77,24 @@ For this deliverable I did the following. I checked the box `[x]` and added a de
 
 For this deliverable I did the following. I checked the box `[x]` and added a description for things I completed.
 
-- [ ] **HTML pages** - I did not complete this part of the deliverable.
-- [ ] **Proper HTML element usage** - I did not complete this part of the deliverable.
-- [ ] **Links** - I did not complete this part of the deliverable.
-- [ ] **Text** - I did not complete this part of the deliverable.
-- [ ] **3rd party API placeholder** - I did not complete this part of the deliverable.
-- [ ] **Images** - I did not complete this part of the deliverable.
-- [ ] **Login placeholder** - I did not complete this part of the deliverable.
-- [ ] **DB data placeholder** - I did not complete this part of the deliverable.
-- [ ] **WebSocket placeholder** - I did not complete this part of the deliverable.
+- [x] **HTML pages** - I complete this part of the deliverable.
+- [x] **Proper HTML element usage** - I complete this part of the deliverable.
+- [x] **Links** - I complete this part of the deliverable.
+- [x] **Text** - I complete this part of the deliverable.
+- [x] **3rd party API placeholder** - I complete this part of the deliverable.
+- [x] **Images** - I complete this part of the deliverable.
+- [x] **Login placeholder** - I complete this part of the deliverable.
+- [x] **DB data placeholder** - I complete this part of the deliverable.
+- [x] **WebSocket placeholder** - I complete this part of the deliverable.
+
+**Summary of completed requirements:**
+- Three HTML pages (index, history, info)
+- Navigation links between pages
+- Login placeholder with username display
+- Database data placeholders in history page
+- WebSocket placeholder for realtime updates
+- Application images
+- Third-party service placeholder
 
 ## 🚀 CSS deliverable
 

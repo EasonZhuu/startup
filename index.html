@@ -8,7 +8,7 @@
 
     <body>
         <header>
-            <h1>GroupVote</h1>
+            <h1 id="site-title">GroupVote</h1>
             <p>Real-time group decision making</p>
         
         
@@ -16,7 +16,7 @@
             <nav>
                 <ul>
                     <li><a href="index.html">New Vote</a></li>
-                    <li><a href="history.html">history</a>"</li>
+                    <li><a href="history.html">history</a></li>
                     <li><a href="info.html">info</a></li>
                 </ul>
             </nav>
@@ -24,35 +24,41 @@
 
         <main>
             <!--login-->
-            <section>
+            <section id="login-section">
                 <h2> User Login</h2>
                 
-                <input type="text" placeholder="Username" />
+                <input id="username-input" type="text" placeholder="Username" />
                 <br />
-                <input type="password" placeholder="Password" />
+                <input id="password-box" type="password" placeholder="Password" />
                 <br />
-                <button>Login</button>
+                <button id="login-button">Login</button>
 
-                <p>Logged in as: <strong>Guest</strong></p>
+                <p id="login-status">Logged in as: <strong>Guest</strong></p>
             </section>
 
             <!--vote-->
             <section>
-                <h2>Current Vote</h2>
+                <h2 id="vote-title">Current Vote</h2>
 
                 <p><strong>Question:</strong> Where should we eat tonight? </p>
 
-                <ul>
-                    <li>Option A</li>
-                    <li>Option B</li>
-                    <li>Option C</li>
-                    <li>Option D</li>
-                </ul>
+                <div id="vote-options">
+                    <button id="vote-a" class="vote-button">Option A</button>
+                    <br />
+                    <br />
+                    <button id="vote-b" class="vote-button">Option B</button>
+                    <br />
+                    <br />
+                    <button id="vote-c" class="vote-button">Option C</button>
+                    <br />
+                    <br />
+                    <button id="vote-d" class="vote-button">Option D</button>
+                </div>
             </section>
             
             <!--results-->
             <section>
-                <h3>Vote Results</h3>
+                <h3 id="results-title">Vote Results</h3>
 
                 <ul>
                     <li>Option A - 3 votes</li>
@@ -65,7 +71,7 @@
             <!--web socket-->
             <section>
                 <h3>Live Updates</h3>
-                <p>Waiting for real_time vote updates...</p>
+                <p id="realtime-placeholder">Waiting for real_time vote updates...(web socket)</p>
             </section>
         </main>
 

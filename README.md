@@ -100,12 +100,19 @@ For this deliverable I did the following. I checked the box `[x]` and added a de
 
 For this deliverable I did the following. I checked the box `[x]` and added a description for things I completed.
 
-- [ ] **Visually appealing colors and layout. No overflowing elements.** - I did not complete this part of the deliverable.
-- [ ] **Use of a CSS framework** - I did not complete this part of the deliverable.
-- [ ] **All visual elements styled using CSS** - I did not complete this part of the deliverable.
-- [ ] **Responsive to window resizing using flexbox and/or grid display** - I did not complete this part of the deliverable.
-- [ ] **Use of a imported font** - I did not complete this part of the deliverable.
-- [ ] **Use of different types of selectors including element, class, ID, and pseudo selectors** - I did not complete this part of the deliverable.
+- [x] **Visually appealing colors and layout. No overflowing elements.** - I complete this part of the deliverable.
+- [x] **Use of a CSS framework** - I complete this part of the deliverable.
+- [x] **All visual elements styled using CSS** - I complete this part of the deliverable.
+- [x] **Responsive to window resizing using flexbox and/or grid display** - I complete this part of the deliverable.
+- [x] **Use of a imported font** - I complete this part of the deliverable.
+- [x] **Use of different types of selectors including element, class, ID, and pseudo selectors** - I complete this part of the deliverable.
+
+**Summary of CSS work completed:**
+- Applied a consistent blue/white theme with cards and spacing
+- Styled layout using Bootstrap grid plus custom flex/grid rules
+- Imported and used the Manrope font site-wide
+- Styled buttons, tables, badges, and alerts with CSS
+- Used element, class, ID, and pseudo selectors in custom styles
 
 ## 🚀 React part 1: Routing deliverable
 

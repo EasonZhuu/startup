@@ -118,9 +118,16 @@ For this deliverable I did the following. I checked the box `[x]` and added a de
 
 For this deliverable I did the following. I checked the box `[x]` and added a description for things I completed.
 
-- [ ] **Bundled using Vite** - I did not complete this part of the deliverable.
-- [ ] **Components** - I did not complete this part of the deliverable.
-- [ ] **Router** - I did not complete this part of the deliverable.
+- [X] **Bundled using Vite** - I complete this part of the deliverable.
+- [X] **Components** - I complete this part of the deliverable.
+- [X] **Router** - I complete this part of the deliverable.
+
+**Summary of React Part 1 work completed:**
+- Ported GroupVote from multi-page HTML/CSS into a single-page React app.
+- Created root React entry files (`index.html` + `index.jsx`) and mounted `App`.
+- Migrated page-specific CSS into component folders under `src/`.
+- Moved static assets into `public/` and updated image references.
+- Replaced `deployFiles.sh` with `deployReact.sh` for React/Vite deployment.
 
 ## 🚀 React part 2: Reactivity deliverable
 

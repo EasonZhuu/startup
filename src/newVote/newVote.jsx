@@ -1,13 +1,14 @@
 import React from 'react';
 import './newVote.css';
 
-export function NewVote({ userName, isLoggedIn, onLogin }) {
+export function NewVote({ userName, isLoggedIn, onLogin, onLogout }) {
   const [loginName, setLoginName] = React.useState(userName || '');
   const [loginMessage, setLoginMessage] = React.useState('');
 
   React.useEffect(() => {
     if (isLoggedIn && userName) {
       setLoginName(userName);
+      setLoginMessage('');
     }
   }, [isLoggedIn, userName]);
 
@@ -21,6 +22,13 @@ export function NewVote({ userName, isLoggedIn, onLogin }) {
     setLoginMessage('');
     if (typeof onLogin === 'function') {
       onLogin(trimmedUserName);
+    }
+  }
+
+  function handleLogoutClick() {
+    setLoginMessage('');
+    if (typeof onLogout === 'function') {
+      onLogout();
     }
   }
 
@@ -50,9 +58,15 @@ export function NewVote({ userName, isLoggedIn, onLogin }) {
                   <input id="password-box" className="form-control" type="password" placeholder="Password" />
                 </div>
 
-                <button id="login-button" className="btn btn-primary w-100" type="button" onClick={handleLoginClick}>
-                  Login
-                </button>
+                {!isLoggedIn ? (
+                  <button id="login-button" className="btn btn-primary w-100" type="button" onClick={handleLoginClick}>
+                    Login
+                  </button>
+                ) : (
+                  <button id="logout-button" className="btn btn-outline-secondary w-100" type="button" onClick={handleLogoutClick}>
+                    Logout
+                  </button>
+                )}
 
                 <div id="login-status" className="alert alert-info mt-3 mb-0">
                   {loginMessage ? (
@@ -78,19 +92,22 @@ export function NewVote({ userName, isLoggedIn, onLogin }) {
                   {' '}Where should we eat tonight?
                 </p>
                 <div id="vote-options">
-                  <button id="vote-a" className="btn btn-outline-primary vote-button">
+                  <button id="vote-a" className="btn btn-outline-primary vote-button" type="button" disabled={!isLoggedIn}>
                     Option A
                   </button>
-                  <button id="vote-b" className="btn btn-outline-primary vote-button">
+                  <button id="vote-b" className="btn btn-outline-primary vote-button" type="button" disabled={!isLoggedIn}>
                     Option B
                   </button>
-                  <button id="vote-c" className="btn btn-outline-primary vote-button">
+                  <button id="vote-c" className="btn btn-outline-primary vote-button" type="button" disabled={!isLoggedIn}>
                     Option C
                   </button>
-                  <button id="vote-d" className="btn btn-outline-primary vote-button">
+                  <button id="vote-d" className="btn btn-outline-primary vote-button" type="button" disabled={!isLoggedIn}>
                     Option D
                   </button>
                 </div>
+                {!isLoggedIn && (
+                  <p className="text-muted mt-3 mb-0">Log in to vote on the current question.</p>
+                )}
               </div>
             </div>
           </section>

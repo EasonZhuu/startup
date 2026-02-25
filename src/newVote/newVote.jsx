@@ -1,7 +1,29 @@
 import React from 'react';
 import './newVote.css';
 
-export function NewVote() {
+export function NewVote({ userName, isLoggedIn, onLogin }) {
+  const [loginName, setLoginName] = React.useState(userName || '');
+  const [loginMessage, setLoginMessage] = React.useState('');
+
+  React.useEffect(() => {
+    if (isLoggedIn && userName) {
+      setLoginName(userName);
+    }
+  }, [isLoggedIn, userName]);
+
+  function handleLoginClick() {
+    const trimmedUserName = loginName.trim();
+    if (!trimmedUserName) {
+      setLoginMessage('Please enter a username.');
+      return;
+    }
+
+    setLoginMessage('');
+    if (typeof onLogin === 'function') {
+      onLogin(trimmedUserName);
+    }
+  }
+
   return (
     <main className="container-fluid">
       <div className="container py-4">
@@ -13,7 +35,14 @@ export function NewVote() {
 
                 <div className="input-group mb-3">
                   <span className="input-group-text">@</span>
-                  <input id="username-input" className="form-control" type="text" placeholder="Username" />
+                  <input
+                    id="username-input"
+                    className="form-control"
+                    type="text"
+                    placeholder="Username"
+                    value={loginName}
+                    onChange={(event) => setLoginName(event.target.value)}
+                  />
                 </div>
 
                 <div className="input-group mb-3">
@@ -21,12 +50,18 @@ export function NewVote() {
                   <input id="password-box" className="form-control" type="password" placeholder="Password" />
                 </div>
 
-                <button id="login-button" className="btn btn-primary w-100">
+                <button id="login-button" className="btn btn-primary w-100" type="button" onClick={handleLoginClick}>
                   Login
                 </button>
 
                 <div id="login-status" className="alert alert-info mt-3 mb-0">
-                  Logged in as: <strong>Guest</strong>
+                  {loginMessage ? (
+                    <span>{loginMessage}</span>
+                  ) : (
+                    <>
+                      Logged in as: <strong>{isLoggedIn ? userName : 'Guest'}</strong>
+                    </>
+                  )}
                 </div>
               </div>
             </div>

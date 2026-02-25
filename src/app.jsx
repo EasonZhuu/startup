@@ -5,8 +5,37 @@ import './app.css';
 import { NewVote } from './newVote/newVote';
 import { History } from './history/history';
 import { Info } from './info/info';
+import { clearUserName, loadUserName, saveUserName } from './storage';
 
 export default function App() {
+  const [userName, setUserName] = React.useState('');
+  const [isLoggedIn, setIsLoggedIn] = React.useState(false);
+
+  React.useEffect(() => {
+    const storedUserName = loadUserName().trim();
+    if (storedUserName) {
+      setUserName(storedUserName);
+      setIsLoggedIn(true);
+    }
+  }, []);
+
+  function handleLogin(nextUserName) {
+    const trimmedUserName = String(nextUserName ?? '').trim();
+    if (!trimmedUserName) {
+      return;
+    }
+
+    setUserName(trimmedUserName);
+    setIsLoggedIn(true);
+    saveUserName(trimmedUserName);
+  }
+
+  function handleLogout() {
+    setUserName('');
+    setIsLoggedIn(false);
+    clearUserName();
+  }
+
   return (
     <BrowserRouter>
       <div className="body bg-white text-dark">
@@ -34,7 +63,10 @@ export default function App() {
         </header>
 
         <Routes>
-          <Route path="/" element={<NewVote />} />
+          <Route
+            path="/"
+            element={<NewVote userName={userName} isLoggedIn={isLoggedIn} onLogin={handleLogin} onLogout={handleLogout} />}
+          />
           <Route path="/history" element={<History />} />
           <Route path="/info" element={<Info />} />
           <Route path="*" element={<NotFound />} />

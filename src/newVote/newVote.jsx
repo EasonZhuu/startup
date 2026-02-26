@@ -20,6 +20,10 @@ export function NewVote({ userName, isLoggedIn, onLogin, onLogout }) {
   }, [isLoggedIn, userName]);
 
   React.useEffect(() => {
+    setVoteMessage('');
+  }, [currentVote?.id]);
+
+  React.useEffect(() => {
     const storedVote = loadCurrentVote();
     if (storedVote) {
       setCurrentVote(storedVote);
@@ -60,12 +64,13 @@ export function NewVote({ userName, isLoggedIn, onLogin, onLogout }) {
         }
 
         const nextOptions = previousVote.options.map((option) => {
+          const safeVotes = Number(option.votes) || 0;
           if (option.id === previousOptionId) {
-            return { ...option, votes: Math.max(0, option.votes - 1) };
+            return { ...option, votes: Math.max(0, safeVotes - 1) };
           }
 
           if (option.id === selectedOption.id) {
-            return { ...option, votes: option.votes + 1 };
+            return { ...option, votes: safeVotes + 1 };
           }
 
           return option;
@@ -101,6 +106,8 @@ export function NewVote({ userName, isLoggedIn, onLogin, onLogout }) {
     }
 
     setLoginMessage('');
+    setVoteMessage('');
+    setDraftMessage('');
     if (typeof onLogin === 'function') {
       onLogin(trimmedUserName);
     }
@@ -109,6 +116,7 @@ export function NewVote({ userName, isLoggedIn, onLogin, onLogout }) {
   function handleLogoutClick() {
     setLoginMessage('');
     setVoteMessage('');
+    setDraftMessage('');
     if (typeof onLogout === 'function') {
       onLogout();
     }
@@ -134,12 +142,13 @@ export function NewVote({ userName, isLoggedIn, onLogin, onLogout }) {
     }
 
     const nextOptions = currentVote.options.map((option) => {
+      const safeVotes = Number(option.votes) || 0;
       if (option.id === previousOptionId) {
-        return { ...option, votes: Math.max(0, option.votes - 1) };
+        return { ...option, votes: Math.max(0, safeVotes - 1) };
       }
 
       if (option.id === optionId) {
-        return { ...option, votes: option.votes + 1 };
+        return { ...option, votes: safeVotes + 1 };
       }
 
       return option;
@@ -158,6 +167,7 @@ export function NewVote({ userName, isLoggedIn, onLogin, onLogout }) {
   }
 
   function handleDraftOptionChange(index, value) {
+    setDraftMessage('');
     setDraftOptions((previousOptions) =>
       previousOptions.map((option, optionIndex) => (optionIndex === index ? value : option))
     );
@@ -197,7 +207,7 @@ export function NewVote({ userName, isLoggedIn, onLogin, onLogout }) {
         totalVotes: currentVote.options.reduce((sum, option) => sum + (Number(option.votes) || 0), 0),
       };
 
-      const nextHistory = [archivedVote, ...loadVoteHistory()];
+      const nextHistory = [archivedVote, ...loadVoteHistory()].slice(0, 20);
       saveVoteHistory(nextHistory);
     }
 
@@ -289,7 +299,10 @@ export function NewVote({ userName, isLoggedIn, onLogin, onLogout }) {
                       type="text"
                       placeholder="Where should we go this weekend?"
                       value={draftQuestion}
-                      onChange={(event) => setDraftQuestion(event.target.value)}
+                      onChange={(event) => {
+                        setDraftMessage('');
+                        setDraftQuestion(event.target.value);
+                      }}
                     />
                   </div>
 
@@ -309,13 +322,16 @@ export function NewVote({ userName, isLoggedIn, onLogin, onLogout }) {
                     </div>
                   ))}
 
-                  <button className="btn btn-outline-primary mt-2" type="submit">
+                  <button className="btn btn-outline-primary mt-2" type="submit" disabled={!isLoggedIn}>
                     Create Vote
                   </button>
                 </form>
 
                 {draftMessage && (
                   <div className="alert alert-secondary mt-3 mb-0">{draftMessage}</div>
+                )}
+                {!isLoggedIn && !draftMessage && (
+                  <p className="text-muted mt-3 mb-0">Log in to create a new vote.</p>
                 )}
               </div>
             </div>
@@ -336,10 +352,15 @@ export function NewVote({ userName, isLoggedIn, onLogin, onLogout }) {
                       <button
                         key={option.id}
                         id={`vote-${option.id}`}
-                        className="btn btn-outline-primary vote-button"
+                        className={`btn ${
+                          currentVote.userVotes && currentVote.userVotes[userName] === option.id
+                            ? 'btn-primary'
+                            : 'btn-outline-primary'
+                        } vote-button`}
                         type="button"
-                        disabled={!isLoggedIn}
+                        disabled={!isLoggedIn || !currentVote}
                         onClick={() => handleVoteClick(option.id)}
+                        aria-pressed={Boolean(currentVote.userVotes && currentVote.userVotes[userName] === option.id)}
                       >
                         {option.label}
                       </button>
@@ -376,7 +397,7 @@ export function NewVote({ userName, isLoggedIn, onLogin, onLogout }) {
                       currentVote.options.map((option) => (
                         <tr key={`result-${option.id}`}>
                           <td>{option.label}</td>
-                          <td>{option.votes}</td>
+                          <td>{Number(option.votes) || 0}</td>
                         </tr>
                       ))
                     ) : (
@@ -400,7 +421,7 @@ export function NewVote({ userName, isLoggedIn, onLogin, onLogout }) {
                       <div key={`${index}-${update}`}>{update}</div>
                     ))
                   ) : (
-                    'Waiting for real_time vote updates...(web socket)'
+                    'Waiting for real-time vote updates (mock WebSocket)...'
                   )}
                 </div>
               </div>

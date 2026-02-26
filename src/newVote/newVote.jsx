@@ -8,6 +8,9 @@ export function NewVote({ userName, isLoggedIn, onLogin, onLogout }) {
   const [currentVote, setCurrentVote] = React.useState(null);
   const [voteMessage, setVoteMessage] = React.useState('');
   const [liveUpdates, setLiveUpdates] = React.useState([]);
+  const [draftQuestion, setDraftQuestion] = React.useState('');
+  const [draftOptions, setDraftOptions] = React.useState(['', '', '', '']);
+  const [draftMessage, setDraftMessage] = React.useState('');
 
   React.useEffect(() => {
     if (isLoggedIn && userName) {
@@ -154,6 +157,31 @@ export function NewVote({ userName, isLoggedIn, onLogin, onLogout }) {
     setVoteMessage(previousOptionId ? 'Vote updated successfully.' : 'Vote submitted successfully.');
   }
 
+  function handleDraftOptionChange(index, value) {
+    setDraftOptions((previousOptions) =>
+      previousOptions.map((option, optionIndex) => (optionIndex === index ? value : option))
+    );
+  }
+
+  function handleDraftSubmit(event) {
+    event.preventDefault();
+
+    const cleanedQuestion = draftQuestion.trim();
+    const filledOptions = draftOptions.map((option) => option.trim()).filter((option) => option);
+
+    if (!cleanedQuestion) {
+      setDraftMessage('Please enter a question for the new vote.');
+      return;
+    }
+
+    if (filledOptions.length < 2) {
+      setDraftMessage('Please enter at least 2 options.');
+      return;
+    }
+
+    setDraftMessage(`Draft ready: "${cleanedQuestion}" with ${filledOptions.length} option(s). Create action comes next step.`);
+  }
+
   return (
     <main className="container-fluid">
       <div className="container py-4">
@@ -204,6 +232,51 @@ export function NewVote({ userName, isLoggedIn, onLogin, onLogout }) {
           </section>
 
           <section className="col-12 col-lg-7">
+            <div className="card shadow-sm mb-4">
+              <div className="card-body">
+                <h2 className="card-title h5">Create New Vote (Draft)</h2>
+                <form onSubmit={handleDraftSubmit}>
+                  <div className="mb-3">
+                    <label className="form-label" htmlFor="draft-question">
+                      Question
+                    </label>
+                    <input
+                      id="draft-question"
+                      className="form-control"
+                      type="text"
+                      placeholder="Where should we go this weekend?"
+                      value={draftQuestion}
+                      onChange={(event) => setDraftQuestion(event.target.value)}
+                    />
+                  </div>
+
+                  {draftOptions.map((option, index) => (
+                    <div className="mb-2" key={`draft-option-${index}`}>
+                      <label className="form-label" htmlFor={`draft-option-${index}`}>
+                        Option {index + 1}
+                      </label>
+                      <input
+                        id={`draft-option-${index}`}
+                        className="form-control"
+                        type="text"
+                        placeholder={`Option ${index + 1}`}
+                        value={option}
+                        onChange={(event) => handleDraftOptionChange(index, event.target.value)}
+                      />
+                    </div>
+                  ))}
+
+                  <button className="btn btn-outline-primary mt-2" type="submit">
+                    Save Draft
+                  </button>
+                </form>
+
+                {draftMessage && (
+                  <div className="alert alert-secondary mt-3 mb-0">{draftMessage}</div>
+                )}
+              </div>
+            </div>
+
             <div className="card shadow-sm h-100">
               <div className="card-body">
                 <h2 id="vote-title" className="card-title h5">

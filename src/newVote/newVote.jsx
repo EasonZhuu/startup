@@ -7,6 +7,7 @@ export function NewVote({ userName, isLoggedIn, onLogin, onLogout }) {
   const [loginMessage, setLoginMessage] = React.useState('');
   const [currentVote, setCurrentVote] = React.useState(null);
   const [voteMessage, setVoteMessage] = React.useState('');
+  const [liveUpdates, setLiveUpdates] = React.useState([]);
 
   React.useEffect(() => {
     if (isLoggedIn && userName) {
@@ -26,6 +27,68 @@ export function NewVote({ userName, isLoggedIn, onLogin, onLogout }) {
     setCurrentVote(defaultVote);
     saveCurrentVote(defaultVote);
   }, []);
+
+  React.useEffect(() => {
+    if (!currentVote || !Array.isArray(currentVote.options) || currentVote.options.length === 0) {
+      return undefined;
+    }
+
+    const mockUsers = ['Alex', 'Mia', 'Noah', 'Priya', 'Kai', 'Sam'];
+
+    const intervalId = setInterval(() => {
+      setCurrentVote((previousVote) => {
+        if (!previousVote || !Array.isArray(previousVote.options) || previousVote.options.length === 0) {
+          return previousVote;
+        }
+
+        const existingVotes =
+          previousVote.userVotes && typeof previousVote.userVotes === 'object' ? previousVote.userVotes : {};
+        const mockUser = mockUsers[Math.floor(Math.random() * mockUsers.length)];
+        const previousOptionId = existingVotes[mockUser];
+
+        const candidateOptions =
+          previousVote.options.length > 1 && previousOptionId
+            ? previousVote.options.filter((option) => option.id !== previousOptionId)
+            : previousVote.options;
+
+        const selectedOption = candidateOptions[Math.floor(Math.random() * candidateOptions.length)];
+        if (!selectedOption) {
+          return previousVote;
+        }
+
+        const nextOptions = previousVote.options.map((option) => {
+          if (option.id === previousOptionId) {
+            return { ...option, votes: Math.max(0, option.votes - 1) };
+          }
+
+          if (option.id === selectedOption.id) {
+            return { ...option, votes: option.votes + 1 };
+          }
+
+          return option;
+        });
+
+        const nextVote = {
+          ...previousVote,
+          options: nextOptions,
+          userVotes: { ...existingVotes, [mockUser]: selectedOption.id },
+          updatedAt: new Date().toISOString(),
+        };
+
+        saveCurrentVote(nextVote);
+
+        const actionText = previousOptionId ? 'changed vote to' : 'voted for';
+        const timeText = new Date().toLocaleTimeString();
+        setLiveUpdates((previousUpdates) =>
+          [`${timeText} - ${mockUser} ${actionText} ${selectedOption.label}`, ...previousUpdates].slice(0, 10)
+        );
+
+        return nextVote;
+      });
+    }, 5000);
+
+    return () => clearInterval(intervalId);
+  }, [currentVote?.id]);
 
   function handleLoginClick() {
     const trimmedUserName = loginName.trim();
@@ -216,7 +279,13 @@ export function NewVote({ userName, isLoggedIn, onLogin, onLogout }) {
               <div className="card-body">
                 <h3 className="card-title h5">Live Updates</h3>
                 <div id="realtime-placeholder" className="alert alert-warning mb-0">
-                  Waiting for real_time vote updates...(web socket)
+                  {liveUpdates.length ? (
+                    liveUpdates.map((update, index) => (
+                      <div key={`${index}-${update}`}>{update}</div>
+                    ))
+                  ) : (
+                    'Waiting for real_time vote updates...(web socket)'
+                  )}
                 </div>
               </div>
             </div>

@@ -1,9 +1,11 @@
 import React from 'react';
 import './newVote.css';
+import { createDefaultVote, loadCurrentVote, saveCurrentVote } from '../storage';
 
 export function NewVote({ userName, isLoggedIn, onLogin, onLogout }) {
   const [loginName, setLoginName] = React.useState(userName || '');
   const [loginMessage, setLoginMessage] = React.useState('');
+  const [currentVote, setCurrentVote] = React.useState(null);
 
   React.useEffect(() => {
     if (isLoggedIn && userName) {
@@ -11,6 +13,18 @@ export function NewVote({ userName, isLoggedIn, onLogin, onLogout }) {
       setLoginMessage('');
     }
   }, [isLoggedIn, userName]);
+
+  React.useEffect(() => {
+    const storedVote = loadCurrentVote();
+    if (storedVote) {
+      setCurrentVote(storedVote);
+      return;
+    }
+
+    const defaultVote = createDefaultVote();
+    setCurrentVote(defaultVote);
+    saveCurrentVote(defaultVote);
+  }, []);
 
   function handleLoginClick() {
     const trimmedUserName = loginName.trim();
@@ -89,21 +103,25 @@ export function NewVote({ userName, isLoggedIn, onLogin, onLogout }) {
                 </h2>
                 <p className="mb-2">
                   <span className="badge bg-primary">Question</span>
-                  {' '}Where should we eat tonight?
+                  {' '}
+                  {currentVote ? currentVote.question : 'Loading current vote...'}
                 </p>
                 <div id="vote-options">
-                  <button id="vote-a" className="btn btn-outline-primary vote-button" type="button" disabled={!isLoggedIn}>
-                    Option A
-                  </button>
-                  <button id="vote-b" className="btn btn-outline-primary vote-button" type="button" disabled={!isLoggedIn}>
-                    Option B
-                  </button>
-                  <button id="vote-c" className="btn btn-outline-primary vote-button" type="button" disabled={!isLoggedIn}>
-                    Option C
-                  </button>
-                  <button id="vote-d" className="btn btn-outline-primary vote-button" type="button" disabled={!isLoggedIn}>
-                    Option D
-                  </button>
+                  {currentVote ? (
+                    currentVote.options.map((option) => (
+                      <button
+                        key={option.id}
+                        id={`vote-${option.id}`}
+                        className="btn btn-outline-primary vote-button"
+                        type="button"
+                        disabled={!isLoggedIn}
+                      >
+                        {option.label}
+                      </button>
+                    ))
+                  ) : (
+                    <p className="text-muted mb-0">Loading options...</p>
+                  )}
                 </div>
                 {!isLoggedIn && (
                   <p className="text-muted mt-3 mb-0">Log in to vote on the current question.</p>
@@ -126,22 +144,18 @@ export function NewVote({ userName, isLoggedIn, onLogin, onLogout }) {
                     </tr>
                   </thead>
                   <tbody>
-                    <tr>
-                      <td>Option A</td>
-                      <td>3</td>
-                    </tr>
-                    <tr>
-                      <td>Option B</td>
-                      <td>8</td>
-                    </tr>
-                    <tr>
-                      <td>Option C</td>
-                      <td>5</td>
-                    </tr>
-                    <tr>
-                      <td>Option D</td>
-                      <td>7</td>
-                    </tr>
+                    {currentVote ? (
+                      currentVote.options.map((option) => (
+                        <tr key={`result-${option.id}`}>
+                          <td>{option.label}</td>
+                          <td>{option.votes}</td>
+                        </tr>
+                      ))
+                    ) : (
+                      <tr>
+                        <td colSpan={2}>Loading vote results...</td>
+                      </tr>
+                    )}
                   </tbody>
                 </table>
               </div>

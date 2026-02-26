@@ -6,6 +6,7 @@ export function NewVote({ userName, isLoggedIn, onLogin, onLogout }) {
   const [loginName, setLoginName] = React.useState(userName || '');
   const [loginMessage, setLoginMessage] = React.useState('');
   const [currentVote, setCurrentVote] = React.useState(null);
+  const [voteMessage, setVoteMessage] = React.useState('');
 
   React.useEffect(() => {
     if (isLoggedIn && userName) {
@@ -41,9 +42,53 @@ export function NewVote({ userName, isLoggedIn, onLogin, onLogout }) {
 
   function handleLogoutClick() {
     setLoginMessage('');
+    setVoteMessage('');
     if (typeof onLogout === 'function') {
       onLogout();
     }
+  }
+
+  function handleVoteClick(optionId) {
+    if (!isLoggedIn || !userName) {
+      setVoteMessage('Please log in to cast a vote.');
+      return;
+    }
+
+    if (!currentVote || !Array.isArray(currentVote.options)) {
+      return;
+    }
+
+    const existingVotes = currentVote.userVotes && typeof currentVote.userVotes === 'object' ? currentVote.userVotes : {};
+    const previousOptionId = existingVotes[userName];
+
+    if (previousOptionId === optionId) {
+      const selectedOption = currentVote.options.find((option) => option.id === optionId);
+      setVoteMessage(`You already voted for ${selectedOption ? selectedOption.label : 'this option'}.`);
+      return;
+    }
+
+    const nextOptions = currentVote.options.map((option) => {
+      if (option.id === previousOptionId) {
+        return { ...option, votes: Math.max(0, option.votes - 1) };
+      }
+
+      if (option.id === optionId) {
+        return { ...option, votes: option.votes + 1 };
+      }
+
+      return option;
+    });
+
+    const nextVote = {
+      ...currentVote,
+      options: nextOptions,
+      userVotes: { ...existingVotes, [userName]: optionId },
+      updatedAt: new Date().toISOString(),
+    };
+
+    setCurrentVote(nextVote);
+    saveCurrentVote(nextVote);
+    setVoteMessage(previousOptionId ? 'Vote updated successfully.' : 'Vote submitted successfully.');
   }
 
   return (
@@ -115,6 +160,7 @@ export function NewVote({ userName, isLoggedIn, onLogin, onLogout }) {
                         className="btn btn-outline-primary vote-button"
                         type="button"
                         disabled={!isLoggedIn}
+                        onClick={() => handleVoteClick(option.id)}
                       >
                         {option.label}
                       </button>
@@ -125,6 +171,9 @@ export function NewVote({ userName, isLoggedIn, onLogin, onLogout }) {
                 </div>
                 {!isLoggedIn && (
                   <p className="text-muted mt-3 mb-0">Log in to vote on the current question.</p>
+                )}
+                {voteMessage && (
+                  <p className="text-muted mt-2 mb-0">{voteMessage}</p>
                 )}
               </div>
             </div>

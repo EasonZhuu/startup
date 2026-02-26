@@ -1,6 +1,6 @@
 import React from 'react';
 import './newVote.css';
-import { createDefaultVote, loadCurrentVote, saveCurrentVote } from '../storage';
+import { createDefaultVote, loadCurrentVote, loadVoteHistory, saveCurrentVote, saveVoteHistory } from '../storage';
 
 export function NewVote({ userName, isLoggedIn, onLogin, onLogout }) {
   const [loginName, setLoginName] = React.useState(userName || '');
@@ -166,6 +166,11 @@ export function NewVote({ userName, isLoggedIn, onLogin, onLogout }) {
   function handleDraftSubmit(event) {
     event.preventDefault();
 
+    if (!isLoggedIn || !userName) {
+      setDraftMessage('Please log in before creating a new vote.');
+      return;
+    }
+
     const cleanedQuestion = draftQuestion.trim();
     const filledOptions = draftOptions.map((option) => option.trim()).filter((option) => option);
 
@@ -179,7 +184,45 @@ export function NewVote({ userName, isLoggedIn, onLogin, onLogout }) {
       return;
     }
 
-    setDraftMessage(`Draft ready: "${cleanedQuestion}" with ${filledOptions.length} option(s). Create action comes next step.`);
+    const nowIso = new Date().toISOString();
+
+    if (currentVote && Array.isArray(currentVote.options)) {
+      const archivedVote = {
+        id: currentVote.id,
+        question: currentVote.question,
+        options: currentVote.options.map((option) => ({ ...option })),
+        createdBy: currentVote.createdBy || 'Guest',
+        createdAt: currentVote.createdAt || nowIso,
+        archivedAt: nowIso,
+        totalVotes: currentVote.options.reduce((sum, option) => sum + (Number(option.votes) || 0), 0),
+      };
+
+      const nextHistory = [archivedVote, ...loadVoteHistory()];
+      saveVoteHistory(nextHistory);
+    }
+
+    const timestamp = Date.now();
+    const nextVote = {
+      id: `vote-${timestamp}`,
+      question: cleanedQuestion,
+      options: filledOptions.map((optionLabel, index) => ({
+        id: `opt-${index + 1}`,
+        label: optionLabel,
+        votes: 0,
+      })),
+      userVotes: {},
+      createdBy: userName,
+      createdAt: nowIso,
+      updatedAt: nowIso,
+    };
+
+    setCurrentVote(nextVote);
+    saveCurrentVote(nextVote);
+    setLiveUpdates([]);
+    setVoteMessage('');
+    setDraftQuestion('');
+    setDraftOptions(['', '', '', '']);
+    setDraftMessage(`Created a new vote: "${cleanedQuestion}".`);
   }
 
   return (
@@ -267,7 +310,7 @@ export function NewVote({ userName, isLoggedIn, onLogin, onLogout }) {
                   ))}
 
                   <button className="btn btn-outline-primary mt-2" type="submit">
-                    Save Draft
+                    Create Vote
                   </button>
                 </form>
 

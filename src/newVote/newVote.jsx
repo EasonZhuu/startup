@@ -336,7 +336,7 @@ export function NewVote({ userName, isLoggedIn, onLogin, onLogout }) {
               </div>
             </div>
 
-            <div className="card shadow-sm h-100">
+            <div className="card shadow-sm">
               <div className="card-body">
                 <h2 id="vote-title" className="card-title h5">
                   Current Vote
@@ -378,7 +378,9 @@ export function NewVote({ userName, isLoggedIn, onLogin, onLogout }) {
               </div>
             </div>
           </section>
+        </div>
 
+        <div className="row g-4 mt-0">
           <section className="col-12 col-lg-6">
             <div className="card shadow-sm">
               <div className="card-body">
@@ -412,7 +414,7 @@ export function NewVote({ userName, isLoggedIn, onLogin, onLogout }) {
           </section>
 
           <section className="col-12 col-lg-6">
-            <div className="card shadow-sm">
+            <div className="card shadow-sm h-auto">
               <div className="card-body">
                 <h3 className="card-title h5">Live Updates</h3>
                 <div id="realtime-placeholder" className="alert alert-warning mb-0">

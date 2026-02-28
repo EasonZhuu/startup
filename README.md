@@ -133,8 +133,17 @@ For this deliverable I did the following. I checked the box `[x]` and added a de
 
 For this deliverable I did the following. I checked the box `[x]` and added a description for things I completed.
 
-- [ ] **All functionality implemented or mocked out** - I did not complete this part of the deliverable.
-- [ ] **Hooks** - I did not complete this part of the deliverable.
+- [X] **All functionality implemented or mocked out** - I complete this part of the deliverable.
+- [X] **Hooks** - I complete this part of the deliverable.
+- Added reactive login/logout flow with `useState` and `useEffect`, with user session stored in `localStorage`.
+- Implemented voting and change-vote logic in the New Vote page, with live result updates.
+- Added a create-vote form (question + options) using controlled React inputs.
+- Implemented creating a new vote and archiving the previous vote into local history.
+- Added mocked real-time updates using `setInterval`.
+- Converted the History page to render from `localStorage` data, including empty state, sorting, and record limit.
+- Added mocked third-party content loading in the Info page using `useEffect` + `setTimeout`.
+- Kept backend/database/WebSocket integrations mocked for later deliverables.
+
 
 ## 🚀 Service deliverable
 

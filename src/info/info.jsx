@@ -2,6 +2,23 @@ import React from 'react';
 import './info.css';
 
 export function Info() {
+  const [isLoadingTip, setIsLoadingTip] = React.useState(true);
+  const [votingTip, setVotingTip] = React.useState(null);
+
+  React.useEffect(() => {
+    const timeoutId = setTimeout(() => {
+      setVotingTip({
+        source: 'Mock 3rd-party suggestion service',
+        category: 'Group decision tip',
+        text: 'Limit the vote to 4 options and set a clear deadline so everyone responds faster.',
+        updatedAt: new Date().toLocaleString(),
+      });
+      setIsLoadingTip(false);
+    }, 1200);
+
+    return () => clearTimeout(timeoutId);
+  }, []);
+
   return (
     <main className="container-fluid">
       <div className="container py-4">
@@ -37,7 +54,19 @@ export function Info() {
             <section id="thirdparty-section" className="card shadow-sm">
               <div className="card-body">
                 <h2 className="card-title h5">External Services / 3rd-party</h2>
-                <p className="info-note mb-0">Third-party APIs will be integrated here.</p>
+                {isLoadingTip ? (
+                  <p className="info-note mb-0">Loading mock third-party voting tip...</p>
+                ) : (
+                  <div>
+                    <p className="mb-2">
+                      <span className="badge bg-primary">{votingTip?.category || 'Tip'}</span>
+                    </p>
+                    <p className="mb-2">{votingTip?.text}</p>
+                    <p className="info-note mb-0">
+                      {votingTip?.source || 'Mock service'} | Updated {votingTip?.updatedAt || 'unknown'}
+                    </p>
+                  </div>
+                )}
               </div>
             </section>
           </div>

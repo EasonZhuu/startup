@@ -1,6 +1,5 @@
 import React from 'react';
 import './newVote.css';
-import { createDefaultVote, loadCurrentVote, loadVoteHistory, saveCurrentVote, saveVoteHistory } from '../storage';
 
 export function NewVote({ userName, isLoggedIn, onLogin, onLogout }) {
   const [loginName, setLoginName] = React.useState(userName || '');
@@ -24,79 +23,59 @@ export function NewVote({ userName, isLoggedIn, onLogin, onLogout }) {
   }, [currentVote?.id]);
 
   React.useEffect(() => {
-    const storedVote = loadCurrentVote();
-    if (storedVote) {
-      setCurrentVote(storedVote);
-      return;
-    }
+    let cancelled = false;
 
-    const defaultVote = createDefaultVote();
-    setCurrentVote(defaultVote);
-    saveCurrentVote(defaultVote);
+    (async () => {
+      try {
+        const response = await fetch('/api/votes/current');
+        const data = await safeJson(response);
+        if (!cancelled && response.ok) {
+          setCurrentVote(data);
+        }
+      } catch {
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
   React.useEffect(() => {
-    if (!currentVote || !Array.isArray(currentVote.options) || currentVote.options.length === 0) {
-      return undefined;
-    }
+    let cancelled = false;
 
-    const mockUsers = ['Alex', 'Mia', 'Noah', 'Priya', 'Kai', 'Sam'];
-
-    const intervalId = setInterval(() => {
-      setCurrentVote((previousVote) => {
-        if (!previousVote || !Array.isArray(previousVote.options) || previousVote.options.length === 0) {
-          return previousVote;
+    const intervalId = setInterval(async () => {
+      try {
+        const response = await fetch('/api/votes/current');
+        const data = await safeJson(response);
+        if (!response.ok || !data || !data.id || cancelled) {
+          return;
         }
 
-        const existingVotes =
-          previousVote.userVotes && typeof previousVote.userVotes === 'object' ? previousVote.userVotes : {};
-        const mockUser = mockUsers[Math.floor(Math.random() * mockUsers.length)];
-        const previousOptionId = existingVotes[mockUser];
+        setCurrentVote((previousVote) => {
+          if (!previousVote) {
+            return data;
+          }
 
-        const candidateOptions =
-          previousVote.options.length > 1 && previousOptionId
-            ? previousVote.options.filter((option) => option.id !== previousOptionId)
-            : previousVote.options;
+          if (previousVote.updatedAt !== data.updatedAt) {
+            const timeText = new Date().toLocaleTimeString();
+            setLiveUpdates((previousUpdates) =>
+              [`${timeText} - Live data synced from service`, ...previousUpdates].slice(0, 10)
+            );
+            return data;
+          }
 
-        const selectedOption = candidateOptions[Math.floor(Math.random() * candidateOptions.length)];
-        if (!selectedOption) {
           return previousVote;
-        }
-
-        const nextOptions = previousVote.options.map((option) => {
-          const safeVotes = Number(option.votes) || 0;
-          if (option.id === previousOptionId) {
-            return { ...option, votes: Math.max(0, safeVotes - 1) };
-          }
-
-          if (option.id === selectedOption.id) {
-            return { ...option, votes: safeVotes + 1 };
-          }
-
-          return option;
         });
-
-        const nextVote = {
-          ...previousVote,
-          options: nextOptions,
-          userVotes: { ...existingVotes, [mockUser]: selectedOption.id },
-          updatedAt: new Date().toISOString(),
-        };
-
-        saveCurrentVote(nextVote);
-
-        const actionText = previousOptionId ? 'changed vote to' : 'voted for';
-        const timeText = new Date().toLocaleTimeString();
-        setLiveUpdates((previousUpdates) =>
-          [`${timeText} - ${mockUser} ${actionText} ${selectedOption.label}`, ...previousUpdates].slice(0, 10)
-        );
-
-        return nextVote;
-      });
+      } catch {
+      }
     }, 5000);
 
-    return () => clearInterval(intervalId);
-  }, [currentVote?.id]);
+    return () => {
+      cancelled = true;
+      clearInterval(intervalId);
+    };
+  }, []);
 
   async function handleLoginClick() {
     const trimmedUserName = loginName.trim();
@@ -130,7 +109,8 @@ export function NewVote({ userName, isLoggedIn, onLogin, onLogout }) {
       await onLogout();
     }
   }
-  function handleVoteClick(optionId) {
+
+  async function handleVoteClick(optionId) {
     if (!isLoggedIn || !userName) {
       setVoteMessage('Please log in to cast a vote.');
       return;
@@ -149,29 +129,24 @@ export function NewVote({ userName, isLoggedIn, onLogin, onLogout }) {
       return;
     }
 
-    const nextOptions = currentVote.options.map((option) => {
-      const safeVotes = Number(option.votes) || 0;
-      if (option.id === previousOptionId) {
-        return { ...option, votes: Math.max(0, safeVotes - 1) };
+    try {
+      const response = await fetch('/api/votes/current/vote', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ optionId }),
+      });
+
+      const data = await safeJson(response);
+      if (!response.ok) {
+        setVoteMessage(data.msg || 'Vote failed.');
+        return;
       }
 
-      if (option.id === optionId) {
-        return { ...option, votes: safeVotes + 1 };
-      }
-
-      return option;
-    });
-
-    const nextVote = {
-      ...currentVote,
-      options: nextOptions,
-      userVotes: { ...existingVotes, [userName]: optionId },
-      updatedAt: new Date().toISOString(),
-    };
-
-    setCurrentVote(nextVote);
-    saveCurrentVote(nextVote);
-    setVoteMessage(previousOptionId ? 'Vote updated successfully.' : 'Vote submitted successfully.');
+      setCurrentVote(data);
+      setVoteMessage(previousOptionId ? 'Vote updated successfully.' : 'Vote submitted successfully.');
+    } catch {
+      setVoteMessage('Cannot reach service.');
+    }
   }
 
   function handleDraftOptionChange(index, value) {
@@ -181,7 +156,7 @@ export function NewVote({ userName, isLoggedIn, onLogin, onLogout }) {
     );
   }
 
-  function handleDraftSubmit(event) {
+  async function handleDraftSubmit(event) {
     event.preventDefault();
 
     if (!isLoggedIn || !userName) {
@@ -202,45 +177,28 @@ export function NewVote({ userName, isLoggedIn, onLogin, onLogout }) {
       return;
     }
 
-    const nowIso = new Date().toISOString();
+    try {
+      const response = await fetch('/api/votes/current', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ question: cleanedQuestion, options: filledOptions }),
+      });
 
-    if (currentVote && Array.isArray(currentVote.options)) {
-      const archivedVote = {
-        id: currentVote.id,
-        question: currentVote.question,
-        options: currentVote.options.map((option) => ({ ...option })),
-        createdBy: currentVote.createdBy || 'Guest',
-        createdAt: currentVote.createdAt || nowIso,
-        archivedAt: nowIso,
-        totalVotes: currentVote.options.reduce((sum, option) => sum + (Number(option.votes) || 0), 0),
-      };
+      const data = await safeJson(response);
+      if (!response.ok) {
+        setDraftMessage(data.msg || 'Create vote failed.');
+        return;
+      }
 
-      const nextHistory = [archivedVote, ...loadVoteHistory()].slice(0, 20);
-      saveVoteHistory(nextHistory);
+      setCurrentVote(data);
+      setLiveUpdates([]);
+      setVoteMessage('');
+      setDraftQuestion('');
+      setDraftOptions(['', '', '', '']);
+      setDraftMessage(`Created a new vote: "${cleanedQuestion}".`);
+    } catch {
+      setDraftMessage('Cannot reach service.');
     }
-
-    const timestamp = Date.now();
-    const nextVote = {
-      id: `vote-${timestamp}`,
-      question: cleanedQuestion,
-      options: filledOptions.map((optionLabel, index) => ({
-        id: `opt-${index + 1}`,
-        label: optionLabel,
-        votes: 0,
-      })),
-      userVotes: {},
-      createdBy: userName,
-      createdAt: nowIso,
-      updatedAt: nowIso,
-    };
-
-    setCurrentVote(nextVote);
-    saveCurrentVote(nextVote);
-    setLiveUpdates([]);
-    setVoteMessage('');
-    setDraftQuestion('');
-    setDraftOptions(['', '', '', '']);
-    setDraftMessage(`Created a new vote: "${cleanedQuestion}".`);
   }
 
   return (
@@ -335,12 +293,8 @@ export function NewVote({ userName, isLoggedIn, onLogin, onLogout }) {
                   </button>
                 </form>
 
-                {draftMessage && (
-                  <div className="alert alert-secondary mt-3 mb-0">{draftMessage}</div>
-                )}
-                {!isLoggedIn && !draftMessage && (
-                  <p className="text-muted mt-3 mb-0">Log in to create a new vote.</p>
-                )}
+                {draftMessage && <div className="alert alert-secondary mt-3 mb-0">{draftMessage}</div>}
+                {!isLoggedIn && !draftMessage && <p className="text-muted mt-3 mb-0">Log in to create a new vote.</p>}
               </div>
             </div>
 
@@ -350,9 +304,7 @@ export function NewVote({ userName, isLoggedIn, onLogin, onLogout }) {
                   Current Vote
                 </h2>
                 <p className="mb-2">
-                  <span className="badge bg-primary">Question</span>
-                  {' '}
-                  {currentVote ? currentVote.question : 'Loading current vote...'}
+                  <span className="badge bg-primary">Question</span> {currentVote ? currentVote.question : 'Loading current vote...'}
                 </p>
                 <div id="vote-options">
                   {currentVote ? (
@@ -361,9 +313,7 @@ export function NewVote({ userName, isLoggedIn, onLogin, onLogout }) {
                         key={option.id}
                         id={`vote-${option.id}`}
                         className={`btn ${
-                          currentVote.userVotes && currentVote.userVotes[userName] === option.id
-                            ? 'btn-primary'
-                            : 'btn-outline-primary'
+                          currentVote.userVotes && currentVote.userVotes[userName] === option.id ? 'btn-primary' : 'btn-outline-primary'
                         } vote-button`}
                         type="button"
                         disabled={!isLoggedIn || !currentVote}
@@ -377,12 +327,8 @@ export function NewVote({ userName, isLoggedIn, onLogin, onLogout }) {
                     <p className="text-muted mb-0">Loading options...</p>
                   )}
                 </div>
-                {!isLoggedIn && (
-                  <p className="text-muted mt-3 mb-0">Log in to vote on the current question.</p>
-                )}
-                {voteMessage && (
-                  <p className="text-muted mt-2 mb-0">{voteMessage}</p>
-                )}
+                {!isLoggedIn && <p className="text-muted mt-3 mb-0">Log in to vote on the current question.</p>}
+                {voteMessage && <p className="text-muted mt-2 mb-0">{voteMessage}</p>}
               </div>
             </div>
           </section>
@@ -427,9 +373,7 @@ export function NewVote({ userName, isLoggedIn, onLogin, onLogout }) {
                 <h3 className="card-title h5">Live Updates</h3>
                 <div id="realtime-placeholder" className="alert alert-warning mb-0">
                   {liveUpdates.length ? (
-                    liveUpdates.map((update, index) => (
-                      <div key={`${index}-${update}`}>{update}</div>
-                    ))
+                    liveUpdates.map((update, index) => <div key={`${index}-${update}`}>{update}</div>)
                   ) : (
                     'Waiting for real-time vote updates (mock WebSocket)...'
                   )}
@@ -443,4 +387,10 @@ export function NewVote({ userName, isLoggedIn, onLogin, onLogout }) {
   );
 }
 
-
+async function safeJson(response) {
+  try {
+    return await response.json();
+  } catch {
+    return {};
+  }
+}

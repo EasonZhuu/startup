@@ -1,12 +1,29 @@
 import React from 'react';
 import './history.css';
-import { loadVoteHistory } from '../storage';
 
 export function History() {
   const [voteHistory, setVoteHistory] = React.useState([]);
 
   React.useEffect(() => {
-    setVoteHistory(loadVoteHistory());
+    let cancelled = false;
+
+    (async () => {
+      try {
+        const response = await fetch('/api/votes/history');
+        const data = await safeJson(response);
+        if (!cancelled && response.ok && Array.isArray(data)) {
+          setVoteHistory(data);
+        }
+      } catch {
+        if (!cancelled) {
+          setVoteHistory([]);
+        }
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
   function formatDate(value) {
@@ -50,9 +67,7 @@ export function History() {
                   <div className="card-body">
                     <h3 className="card-title h5">Vote #{index + 1}</h3>
                     <p className="mb-2">
-                      <span className="badge bg-primary">Question</span>
-                      {' '}
-                      {vote.question || 'Untitled vote'}
+                      <span className="badge bg-primary">Question</span> {vote.question || 'Untitled vote'}
                     </p>
                     <ul className="list-group list-group-flush">
                       {(Array.isArray(vote.options) ? vote.options : []).map((option) => (
@@ -76,4 +91,12 @@ export function History() {
       </div>
     </main>
   );
+}
+
+async function safeJson(response) {
+  try {
+    return await response.json();
+  } catch {
+    return [];
+  }
 }

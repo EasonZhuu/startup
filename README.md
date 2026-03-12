@@ -149,12 +149,21 @@ For this deliverable I did the following. I checked the box `[x]` and added a de
 
 For this deliverable I did the following. I checked the box `[x]` and added a description for things I completed.
 
-- [ ] **Node.js/Express HTTP service** - I did not complete this part of the deliverable.
-- [ ] **Static middleware for frontend** - I did not complete this part of the deliverable.
-- [ ] **Calls to third party endpoints** - I did not complete this part of the deliverable.
-- [ ] **Backend service endpoints** - I did not complete this part of the deliverable.
-- [ ] **Frontend calls service endpoints** - I did not complete this part of the deliverable.
-- [ ] **Supports registration, login, logout, and restricted endpoint** - I did not complete this part of the deliverable.
+- [x] **Node.js/Express HTTP service** - Added a backend service in `service/index.js` running on port 4000.
+- [x] **Static middleware for frontend** - Added `app.use(express.static('public'))`.
+- [x] **Calls to third party endpoints** - The Info page now calls `https://quote.cs260.click` with loading/error/fallback behavior.
+- [x] **Backend service endpoints** - Added auth endpoints and vote endpoints (`/api/auth`, `/api/user/me`, `/api/votes/*`).
+- [x] **Frontend calls service endpoints** - New Vote and History now call backend service endpoints via `fetch`.
+- [x] **Supports registration, login, logout, and restricted endpoint** - Added register/login/logout flow and protected endpoints with 401 behavior when unauthorized.
+- [x] **Uses BCrypt to hash passwords** - Passwords are hashed with `bcrypt.hash` and validated with `bcrypt.compare`.
+
+**Summary of Service work completed:**
+- Created a Node.js + Express backend under `service/`.
+- Added cookie-based authentication using `uuid` tokens.
+- Added protected middleware and restricted endpoint behavior.
+- Implemented current vote, vote submit, create vote, and vote history APIs.
+- Connected frontend pages to backend APIs and added a real third-party fetch call.
+- Deployment with `deployService.sh` will be done in the next step.
 
 ## 🚀 DB deliverable
 

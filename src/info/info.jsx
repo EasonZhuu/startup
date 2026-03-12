@@ -4,19 +4,47 @@ import './info.css';
 export function Info() {
   const [isLoadingTip, setIsLoadingTip] = React.useState(true);
   const [votingTip, setVotingTip] = React.useState(null);
+  const [tipError, setTipError] = React.useState('');
 
   React.useEffect(() => {
-    const timeoutId = setTimeout(() => {
-      setVotingTip({
-        source: 'Mock 3rd-party suggestion service',
-        category: 'Group decision tip',
-        text: 'Limit the vote to 4 options and set a clear deadline so everyone responds faster.',
-        updatedAt: new Date().toLocaleString(),
-      });
-      setIsLoadingTip(false);
-    }, 1200);
+    let cancelled = false;
 
-    return () => clearTimeout(timeoutId);
+    (async () => {
+      try {
+        const response = await fetch('https://quote.cs260.click');
+        const data = await response.json();
+
+        if (!cancelled) {
+          setVotingTip({
+            source: 'quote.cs260.click',
+            category: 'Group decision quote',
+            text: data.quote || 'Use clear options and a clear deadline.',
+            author: data.author || 'Unknown',
+            updatedAt: new Date().toLocaleString(),
+          });
+          setTipError('');
+        }
+      } catch {
+        if (!cancelled) {
+          setVotingTip({
+            source: 'Fallback tip',
+            category: 'Group decision tip',
+            text: 'Limit options to four and set a clear deadline so everyone can respond quickly.',
+            author: 'GroupVote',
+            updatedAt: new Date().toLocaleString(),
+          });
+          setTipError('Third-party service is unavailable. Showing fallback content.');
+        }
+      } finally {
+        if (!cancelled) {
+          setIsLoadingTip(false);
+        }
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
   return (
@@ -55,15 +83,17 @@ export function Info() {
               <div className="card-body">
                 <h2 className="card-title h5">External Services / 3rd-party</h2>
                 {isLoadingTip ? (
-                  <p className="info-note mb-0">Loading mock third-party voting tip...</p>
+                  <p className="info-note mb-0">Loading quote from third-party service...</p>
                 ) : (
                   <div>
+                    {tipError && <p className="info-note mb-2">{tipError}</p>}
                     <p className="mb-2">
                       <span className="badge bg-primary">{votingTip?.category || 'Tip'}</span>
                     </p>
                     <p className="mb-2">{votingTip?.text}</p>
                     <p className="info-note mb-0">
-                      {votingTip?.source || 'Mock service'} | Updated {votingTip?.updatedAt || 'unknown'}
+                      {votingTip?.source || 'Unknown source'} | {votingTip?.author || 'Unknown author'} | Updated{' '}
+                      {votingTip?.updatedAt || 'unknown'}
                     </p>
                   </div>
                 )}

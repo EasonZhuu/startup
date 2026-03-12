@@ -52,14 +52,12 @@ app.delete('/api/auth', (req, res) => {
   return res.send({});
 });
 
-app.get('/api/user/me', (req, res) => {
-  const token = req.cookies.auth;
-  const user = getUser('token', token);
-  if (!user) {
-    return res.status(401).send({ msg: 'Unauthorized' });
-  }
+app.get('/api/user/me', authMiddleware, (req, res) => {
+  return res.send({ email: req.user.email });
+});
 
-  return res.send({ email: user.email });
+app.get('/api/protected/ping', authMiddleware, (req, res) => {
+  return res.send({ msg: 'Authorized', email: req.user.email });
 });
 
 async function createUser(email, password) {
@@ -75,6 +73,17 @@ function getUser(field, value) {
   }
 
   return users.find((user) => user[field] === value);
+}
+
+function authMiddleware(req, res, next) {
+  const token = req.cookies.auth;
+  const user = getUser('token', token);
+  if (!user) {
+    return res.status(401).send({ msg: 'Unauthorized' });
+  }
+
+  req.user = user;
+  return next();
 }
 
 function setAuthCookie(res, user) {

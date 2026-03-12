@@ -98,10 +98,16 @@ export function NewVote({ userName, isLoggedIn, onLogin, onLogout }) {
     return () => clearInterval(intervalId);
   }, [currentVote?.id]);
 
-  function handleLoginClick() {
+  async function handleLoginClick() {
     const trimmedUserName = loginName.trim();
+    const passwordValue = String(document.getElementById('password-box')?.value || '');
     if (!trimmedUserName) {
       setLoginMessage('Please enter a username.');
+      return;
+    }
+
+    if (!passwordValue) {
+      setLoginMessage('Please enter a password.');
       return;
     }
 
@@ -109,19 +115,21 @@ export function NewVote({ userName, isLoggedIn, onLogin, onLogout }) {
     setVoteMessage('');
     setDraftMessage('');
     if (typeof onLogin === 'function') {
-      onLogin(trimmedUserName);
+      const result = await onLogin(trimmedUserName, passwordValue);
+      if (result && !result.ok) {
+        setLoginMessage(result.msg || 'Login failed.');
+      }
     }
   }
 
-  function handleLogoutClick() {
+  async function handleLogoutClick() {
     setLoginMessage('');
     setVoteMessage('');
     setDraftMessage('');
     if (typeof onLogout === 'function') {
-      onLogout();
+      await onLogout();
     }
   }
-
   function handleVoteClick(optionId) {
     if (!isLoggedIn || !userName) {
       setVoteMessage('Please log in to cast a vote.');
@@ -434,3 +442,5 @@ export function NewVote({ userName, isLoggedIn, onLogin, onLogout }) {
     </main>
   );
 }
+
+

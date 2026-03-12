@@ -5,35 +5,73 @@ import './app.css';
 import { NewVote } from './newVote/newVote';
 import { History } from './history/history';
 import { Info } from './info/info';
-import { clearUserName, loadUserName, saveUserName } from './storage';
 
 export default function App() {
   const [userName, setUserName] = React.useState('');
   const [isLoggedIn, setIsLoggedIn] = React.useState(false);
 
   React.useEffect(() => {
-    const storedUserName = loadUserName().trim();
-    if (storedUserName) {
-      setUserName(storedUserName);
-      setIsLoggedIn(true);
-    }
+    let cancelled = false;
+
+    (async () => {
+      try {
+        const res = await fetch('/api/user/me');
+        if (!res.ok) {
+          return;
+        }
+
+        const data = await safeJson(res);
+        const email = String(data.email || '').trim();
+        if (!cancelled && email) {
+          setUserName(email);
+          setIsLoggedIn(true);
+        }
+      } catch {
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
-  function handleLogin(nextUserName) {
-    const trimmedUserName = String(nextUserName ?? '').trim();
-    if (!trimmedUserName) {
-      return;
+  async function handleLogin(nextUserName, password) {
+    const email = String(nextUserName || '').trim();
+    const rawPassword = String(password || '');
+    if (!email || !rawPassword) {
+      return { ok: false, msg: 'Please enter both username and password.' };
     }
 
-    setUserName(trimmedUserName);
-    setIsLoggedIn(true);
-    saveUserName(trimmedUserName);
+    try {
+      const response = await fetch('/api/auth', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, password: rawPassword }),
+      });
+
+      const data = await safeJson(response);
+      if (!response.ok) {
+        return { ok: false, msg: data.msg || 'Login failed.' };
+      }
+
+      const resolvedEmail = String(data.email || email).trim() || email;
+      setUserName(resolvedEmail);
+      setIsLoggedIn(true);
+      return { ok: true, msg: 'Logged in.' };
+    } catch {
+      return { ok: false, msg: 'Cannot reach service.' };
+    }
   }
 
-  function handleLogout() {
+  async function handleLogout() {
+    try {
+      await fetch('/api/auth', { method: 'DELETE' });
+    } catch {
+    }
+
     setUserName('');
     setIsLoggedIn(false);
-    clearUserName();
+    return { ok: true };
   }
 
   return (
@@ -83,6 +121,14 @@ export default function App() {
       </div>
     </BrowserRouter>
   );
+}
+
+async function safeJson(response) {
+  try {
+    return await response.json();
+  } catch {
+    return {};
+  }
 }
 
 function NotFound() {

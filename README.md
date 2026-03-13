@@ -163,7 +163,7 @@ For this deliverable I did the following. I checked the box `[x]` and added a de
 - Added protected middleware and restricted endpoint behavior.
 - Implemented current vote, vote submit, create vote, and vote history APIs.
 - Connected frontend pages to backend APIs and added a real third-party fetch call.
-- Deployment with `deployService.sh` will be done in the next step.
+- Replaced deployment script with `deployService.sh` and prepared production deployment command for `startup`.
 
 ## 🚀 DB deliverable
 
@@ -186,3 +186,4 @@ For this deliverable I did the following. I checked the box `[x]` and added a de
 new marks
 
 111
+

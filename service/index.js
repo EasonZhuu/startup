@@ -8,13 +8,14 @@ const app = express();
 const port = process.argv.length > 2 ? process.argv[2] : 4000;
 
 let voteHistory = [];
-let currentVote = createDefaultVote('Guest');
+let currentVote = null;
 
 app.use(express.json());
 app.use(cookieParser());
 app.use(express.static('public'));
 
 DB.testConnection();
+initializeCurrentVote();
 
 app.get('/api/health', (req, res) => {
   res.send({ status: 'ok' });
@@ -64,15 +65,17 @@ app.get('/api/protected/ping', authMiddleware, (req, res) => {
   return res.send({ msg: 'Authorized', email: req.user.email });
 });
 
-app.get('/api/votes/current', (req, res) => {
-  return res.send(currentVote);
+app.get('/api/votes/current', async (req, res) => {
+  const vote = await ensureCurrentVoteLoaded();
+  return res.send(vote);
 });
 
 app.get('/api/votes/history', (req, res) => {
   return res.send(voteHistory);
 });
 
-app.post('/api/votes/current', authMiddleware, (req, res) => {
+app.post('/api/votes/current', authMiddleware, async (req, res) => {
+  const previousVote = await ensureCurrentVoteLoaded();
   const { question, options } = req.body || {};
   const cleanQuestion = String(question || '').trim();
   const cleanOptions = Array.isArray(options)
@@ -87,16 +90,16 @@ app.post('/api/votes/current', authMiddleware, (req, res) => {
     return res.status(400).send({ msg: 'At least 2 options required' });
   }
 
-  if (currentVote) {
+  if (previousVote) {
     const archivedAt = new Date().toISOString();
-    const totalVotes = currentVote.options.reduce((sum, option) => sum + (Number(option.votes) || 0), 0);
+    const totalVotes = previousVote.options.reduce((sum, option) => sum + (Number(option.votes) || 0), 0);
     voteHistory = [
       {
-        id: currentVote.id,
-        question: currentVote.question,
-        options: currentVote.options,
-        createdBy: currentVote.createdBy,
-        createdAt: currentVote.createdAt,
+        id: previousVote.id,
+        question: previousVote.question,
+        options: previousVote.options,
+        createdBy: previousVote.createdBy,
+        createdAt: previousVote.createdAt,
         archivedAt,
         totalVotes,
       },
@@ -116,10 +119,13 @@ app.post('/api/votes/current', authMiddleware, (req, res) => {
     updatedAt: now,
   };
 
+  await DB.saveCurrentVote(currentVote);
   return res.send(currentVote);
 });
 
-app.post('/api/votes/current/vote', authMiddleware, (req, res) => {
+app.post('/api/votes/current/vote', authMiddleware, async (req, res) => {
+  await ensureCurrentVoteLoaded();
+
   const { optionId } = req.body || {};
   if (!currentVote || !Array.isArray(currentVote.options)) {
     return res.status(404).send({ msg: 'No active vote' });
@@ -161,6 +167,26 @@ async function createUser(email, password) {
   const user = { email, password: passwordHash };
   await DB.addUser(user);
   return user;
+}
+
+async function initializeCurrentVote() {
+  await ensureCurrentVoteLoaded();
+}
+
+async function ensureCurrentVoteLoaded() {
+  if (currentVote) {
+    return currentVote;
+  }
+
+  const savedVote = await DB.getCurrentVote();
+  if (savedVote) {
+    currentVote = savedVote;
+    return currentVote;
+  }
+
+  currentVote = createDefaultVote('Guest');
+  await DB.saveCurrentVote(currentVote);
+  return currentVote;
 }
 
 async function authMiddleware(req, res, next) {
@@ -221,4 +247,6 @@ function createDefaultVote(createdBy) {
 app.listen(port, () => {
   console.log(`Service listening on port ${port}`);
 });
+
+
 

@@ -70,6 +70,20 @@ async function clearUserToken(token) {
   await userCollection.updateOne({ token }, { $unset: { token: '' } });
 }
 
+async function getCurrentVote() {
+  return voteCollection.findOne({ _id: 'current' }, { projection: { _id: 0 } });
+}
+
+async function saveCurrentVote(vote) {
+  if (!vote || typeof vote !== 'object') {
+    return null;
+  }
+
+  const voteDocument = { ...vote, _id: 'current' };
+  await voteCollection.replaceOne({ _id: 'current' }, voteDocument, { upsert: true });
+  return getCurrentVote();
+}
+
 module.exports = {
   testConnection,
   userCollection,
@@ -80,4 +94,7 @@ module.exports = {
   addUser,
   updateUserToken,
   clearUserToken,
+  getCurrentVote,
+  saveCurrentVote,
 };
+

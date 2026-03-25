@@ -7,7 +7,6 @@ const DB = require('./database');
 const app = express();
 const port = process.argv.length > 2 ? process.argv[2] : 4000;
 
-let voteHistory = [];
 let currentVote = null;
 
 app.use(express.json());
@@ -70,8 +69,9 @@ app.get('/api/votes/current', async (req, res) => {
   return res.send(vote);
 });
 
-app.get('/api/votes/history', (req, res) => {
-  return res.send(voteHistory);
+app.get('/api/votes/history', async (req, res) => {
+  const history = await DB.getVoteHistory(20);
+  return res.send(history);
 });
 
 app.post('/api/votes/current', authMiddleware, async (req, res) => {
@@ -93,18 +93,15 @@ app.post('/api/votes/current', authMiddleware, async (req, res) => {
   if (previousVote) {
     const archivedAt = new Date().toISOString();
     const totalVotes = previousVote.options.reduce((sum, option) => sum + (Number(option.votes) || 0), 0);
-    voteHistory = [
-      {
-        id: previousVote.id,
-        question: previousVote.question,
-        options: previousVote.options,
-        createdBy: previousVote.createdBy,
-        createdAt: previousVote.createdAt,
-        archivedAt,
-        totalVotes,
-      },
-      ...voteHistory,
-    ].slice(0, 20);
+    await DB.addVoteHistoryItem({
+      id: previousVote.id,
+      question: previousVote.question,
+      options: previousVote.options,
+      createdBy: previousVote.createdBy,
+      createdAt: previousVote.createdAt,
+      archivedAt,
+      totalVotes,
+    });
   }
 
   const now = new Date().toISOString();
@@ -247,6 +244,3 @@ function createDefaultVote(createdBy) {
 app.listen(port, () => {
   console.log(`Service listening on port ${port}`);
 });
-
-
-

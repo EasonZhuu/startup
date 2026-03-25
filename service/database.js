@@ -84,6 +84,31 @@ async function saveCurrentVote(vote) {
   return getCurrentVote();
 }
 
+async function addVoteHistoryItem(voteHistoryItem) {
+  if (!voteHistoryItem || typeof voteHistoryItem !== 'object') {
+    return null;
+  }
+
+  await historyCollection.insertOne(voteHistoryItem);
+  await trimVoteHistory(20);
+  return voteHistoryItem;
+}
+
+async function getVoteHistory(limit = 20) {
+  return historyCollection.find({}, { projection: { _id: 0 } }).sort({ archivedAt: -1 }).limit(limit).toArray();
+}
+
+async function trimVoteHistory(limit = 20) {
+  const overflowItems = await historyCollection.find({}, { projection: { _id: 1 } }).sort({ archivedAt: -1 }).skip(limit).toArray();
+
+  if (!overflowItems.length) {
+    return;
+  }
+
+  const overflowIds = overflowItems.map((item) => item._id);
+  await historyCollection.deleteMany({ _id: { $in: overflowIds } });
+}
+
 module.exports = {
   testConnection,
   userCollection,
@@ -96,5 +121,6 @@ module.exports = {
   clearUserToken,
   getCurrentVote,
   saveCurrentVote,
+  addVoteHistoryItem,
+  getVoteHistory,
 };
-

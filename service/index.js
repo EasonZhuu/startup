@@ -156,6 +156,7 @@ app.post('/api/votes/current/vote', authMiddleware, async (req, res) => {
     updatedAt: new Date().toISOString(),
   };
 
+  await DB.saveCurrentVote(currentVote);
   return res.send(currentVote);
 });
 

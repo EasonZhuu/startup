@@ -28,9 +28,56 @@ async function testConnection() {
   }
 }
 
+async function getUserByEmail(email) {
+  if (!email) {
+    return null;
+  }
+
+  return userCollection.findOne({ email });
+}
+
+async function getUserByToken(token) {
+  if (!token) {
+    return null;
+  }
+
+  return userCollection.findOne({ token });
+}
+
+async function addUser(user) {
+  if (!user || typeof user !== 'object') {
+    return null;
+  }
+
+  await userCollection.insertOne(user);
+  return user;
+}
+
+async function updateUserToken(email, token) {
+  if (!email || !token) {
+    return null;
+  }
+
+  await userCollection.updateOne({ email }, { $set: { token } });
+  return getUserByEmail(email);
+}
+
+async function clearUserToken(token) {
+  if (!token) {
+    return;
+  }
+
+  await userCollection.updateOne({ token }, { $unset: { token: '' } });
+}
+
 module.exports = {
   testConnection,
   userCollection,
   voteCollection,
   historyCollection,
+  getUserByEmail,
+  getUserByToken,
+  addUser,
+  updateUserToken,
+  clearUserToken,
 };

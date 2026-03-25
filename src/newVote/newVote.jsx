@@ -1,7 +1,7 @@
 import React from 'react';
 import './newVote.css';
 
-export function NewVote({ userName, isLoggedIn, onLogin, onLogout }) {
+export function NewVote({ userName, isLoggedIn, onLogin, onRegister, onLogout }) {
   const [loginName, setLoginName] = React.useState(userName || '');
   const [loginMessage, setLoginMessage] = React.useState('');
   const [currentVote, setCurrentVote] = React.useState(null);
@@ -77,26 +77,59 @@ export function NewVote({ userName, isLoggedIn, onLogin, onLogout }) {
     };
   }, []);
 
-  async function handleLoginClick() {
+  function getPasswordValue() {
+    return String(document.getElementById('password-box')?.value || '');
+  }
+
+  function validateLoginInput() {
     const trimmedUserName = loginName.trim();
-    const passwordValue = String(document.getElementById('password-box')?.value || '');
+    const passwordValue = getPasswordValue();
+
     if (!trimmedUserName) {
       setLoginMessage('Please enter a username.');
-      return;
+      return { ok: false, userName: '', password: '' };
     }
 
     if (!passwordValue) {
       setLoginMessage('Please enter a password.');
+      return { ok: false, userName: '', password: '' };
+    }
+
+    return { ok: true, userName: trimmedUserName, password: passwordValue };
+  }
+
+  async function handleLoginClick() {
+    const check = validateLoginInput();
+    if (!check.ok) {
       return;
     }
 
     setLoginMessage('');
     setVoteMessage('');
     setDraftMessage('');
+
     if (typeof onLogin === 'function') {
-      const result = await onLogin(trimmedUserName, passwordValue);
+      const result = await onLogin(check.userName, check.password);
       if (result && !result.ok) {
         setLoginMessage(result.msg || 'Login failed.');
+      }
+    }
+  }
+
+  async function handleCreateAccountClick() {
+    const check = validateLoginInput();
+    if (!check.ok) {
+      return;
+    }
+
+    setLoginMessage('');
+    setVoteMessage('');
+    setDraftMessage('');
+
+    if (typeof onRegister === 'function') {
+      const result = await onRegister(check.userName, check.password);
+      if (result && !result.ok) {
+        setLoginMessage(result.msg || 'Create account failed.');
       }
     }
   }
@@ -228,9 +261,19 @@ export function NewVote({ userName, isLoggedIn, onLogin, onLogout }) {
                 </div>
 
                 {!isLoggedIn ? (
-                  <button id="login-button" className="btn btn-primary w-100" type="button" onClick={handleLoginClick}>
-                    Login
-                  </button>
+                  <div className="d-flex gap-2">
+                    <button id="login-button" className="btn btn-primary flex-fill" type="button" onClick={handleLoginClick}>
+                      Login
+                    </button>
+                    <button
+                      id="create-button"
+                      className="btn btn-outline-primary flex-fill"
+                      type="button"
+                      onClick={handleCreateAccountClick}
+                    >
+                      Create
+                    </button>
+                  </div>
                 ) : (
                   <button id="logout-button" className="btn btn-outline-secondary w-100" type="button" onClick={handleLogoutClick}>
                     Logout

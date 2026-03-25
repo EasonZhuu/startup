@@ -63,6 +63,34 @@ export default function App() {
     }
   }
 
+  async function handleRegister(nextUserName, password) {
+    const email = String(nextUserName || '').trim();
+    const rawPassword = String(password || '');
+    if (!email || !rawPassword) {
+      return { ok: false, msg: 'Please enter both username and password.' };
+    }
+
+    try {
+      const response = await fetch('/api/auth', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, password: rawPassword }),
+      });
+
+      const data = await safeJson(response);
+      if (!response.ok) {
+        return { ok: false, msg: data.msg || 'Create account failed.' };
+      }
+
+      const resolvedEmail = String(data.email || email).trim() || email;
+      setUserName(resolvedEmail);
+      setIsLoggedIn(true);
+      return { ok: true, msg: 'Account created and logged in.' };
+    } catch {
+      return { ok: false, msg: 'Cannot reach service.' };
+    }
+  }
+
   async function handleLogout() {
     try {
       await fetch('/api/auth', { method: 'DELETE' });
@@ -103,7 +131,15 @@ export default function App() {
         <Routes>
           <Route
             path="/"
-            element={<NewVote userName={userName} isLoggedIn={isLoggedIn} onLogin={handleLogin} onLogout={handleLogout} />}
+            element={
+              <NewVote
+                userName={userName}
+                isLoggedIn={isLoggedIn}
+                onLogin={handleLogin}
+                onRegister={handleRegister}
+                onLogout={handleLogout}
+              />
+            }
           />
           <Route path="/history" element={<History />} />
           <Route path="/info" element={<Info />} />

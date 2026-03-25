@@ -236,7 +236,7 @@ export function NewVote({ userName, isLoggedIn, onLogin, onRegister, onLogout })
 
   return (
     <main className="container-fluid">
-      <div className="container py-4">
+      <div className="container-fluid py-4 px-3 px-xl-4">
         <div className="row g-4">
           <section id="login-section" className="col-12 col-lg-5">
             <div className="card shadow-sm">

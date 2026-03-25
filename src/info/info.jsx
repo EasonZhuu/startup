@@ -49,7 +49,7 @@ export function Info() {
 
   return (
     <main className="container-fluid">
-      <div className="container py-4">
+      <div className="container-fluid py-4 px-3 px-xl-4">
         <div className="row g-4 align-items-start">
           <div className="col-12 col-lg-5">
             <div id="picture" className="picture-box card shadow-sm">

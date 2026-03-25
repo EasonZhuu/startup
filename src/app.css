@@ -3,6 +3,7 @@
 .body {
   display: flex;
   flex-direction: column;
+  min-height: 100vh;
   min-width: 375px;
   font-family: "Manrope", sans-serif !important;
 }
@@ -12,7 +13,8 @@ header {
 }
 
 main {
-  flex: 1 calc(100vh - 110px);
+  flex: 1 0 auto;
+  min-height: calc(100vh - 110px);
   display: flex;
   flex-direction: column;
   justify-content: flex-start;
@@ -36,8 +38,13 @@ menu .nav-item {
 }
 
 .navbar-brand {
-  padding-left: 0.3em;
+  padding-left: 0;
   border-bottom: solid rgba(255, 255, 255, 0.35) thin;
+}
+
+.navbar {
+  padding-left: 0.8rem;
+  padding-right: 0.8rem;
 }
 
 footer a {

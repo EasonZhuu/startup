@@ -169,8 +169,14 @@ For this deliverable I did the following. I checked the box `[x]` and added a de
 
 For this deliverable I did the following. I checked the box `[x]` and added a description for things I completed.
 
-- [ ] **Stores data in MongoDB** - I did not complete this part of the deliverable.
-- [ ] **Stores credentials in MongoDB** - I did not complete this part of the deliverable.
+- [x] **Stores data in MongoDB** - Current vote and vote history are now persisted in MongoDB collections instead of backend memory.
+- [x] **Stores credentials in MongoDB** - User accounts, password hashes, and auth tokens are stored and retrieved from MongoDB.
+
+**Summary of DB work completed:**
+- Added a MongoDB connection module and config template under `service/`.
+- Migrated user auth data (register/login/logout token flow) from memory to MongoDB.
+- Persisted current vote and archived history in MongoDB with latest-first order and max 20 records.
+- Verified persistence by restarting the service and confirming vote data remains available.
 
 ## 🚀 WebSocket deliverable
 

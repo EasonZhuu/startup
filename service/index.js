@@ -48,8 +48,7 @@ app.put('/api/auth', async (req, res) => {
 });
 
 app.delete('/api/auth', async (req, res) => {
-  const token = req.cookies.auth;
-  const user = await DB.getUserByToken(token);
+  const { token, user } = await getAuthFromCookie(req);
   if (user) {
     await clearAuthCookie(res, token);
   }
@@ -165,14 +164,23 @@ async function createUser(email, password) {
 }
 
 async function authMiddleware(req, res, next) {
-  const token = req.cookies.auth;
-  const user = await DB.getUserByToken(token);
+  const { user } = await getAuthFromCookie(req);
   if (!user) {
     return res.status(401).send({ msg: 'Unauthorized' });
   }
 
   req.user = user;
   return next();
+}
+
+async function getAuthFromCookie(req) {
+  const token = req.cookies?.auth;
+  if (!token) {
+    return { token: '', user: null };
+  }
+
+  const user = await DB.getUserByToken(token);
+  return { token, user };
 }
 
 async function setAuthCookie(res, user) {
@@ -213,3 +221,4 @@ function createDefaultVote(createdBy) {
 app.listen(port, () => {
   console.log(`Service listening on port ${port}`);
 });
+

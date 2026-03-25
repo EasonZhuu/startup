@@ -19,6 +19,13 @@ body,
   font-family: "Manrope", sans-serif !important;
 }
 
+.page-shell {
+  width: 100%;
+  max-width: 1600px;
+  margin: 0 auto;
+  padding: 1rem 1rem;
+}
+
 header {
   flex: 0 80px;
 }
@@ -55,8 +62,8 @@ menu .nav-item {
 }
 
 .navbar {
-  padding-left: 0.8rem;
-  padding-right: 0.8rem;
+  padding-left: 1rem;
+  padding-right: 1rem;
 }
 
 footer a {

@@ -49,7 +49,7 @@ export function History() {
 
   return (
     <main className="container-fluid">
-      <div className="container-fluid py-4 px-3 px-xl-4">
+      <div className="page-shell">
         <div className="row g-4">
           {visibleHistory.length === 0 ? (
             <section className="col-12">

@@ -2,17 +2,19 @@ const express = require('express');
 const cookieParser = require('cookie-parser');
 const bcrypt = require('bcryptjs');
 const uuid = require('uuid');
+const DB = require('./database');
 
 const app = express();
 const port = process.argv.length > 2 ? process.argv[2] : 4000;
 
-const users = [];
 let voteHistory = [];
 let currentVote = createDefaultVote('Guest');
 
 app.use(express.json());
 app.use(cookieParser());
 app.use(express.static('public'));
+
+DB.testConnection();
 
 app.get('/api/health', (req, res) => {
   res.send({ status: 'ok' });
@@ -24,31 +26,32 @@ app.post('/api/auth', async (req, res) => {
     return res.status(400).send({ msg: 'Missing email or password' });
   }
 
-  if (getUser('email', email)) {
+  const existingUser = await DB.getUserByEmail(email);
+  if (existingUser) {
     return res.status(409).send({ msg: 'Existing user' });
   }
 
   const user = await createUser(email, password);
-  setAuthCookie(res, user);
-  return res.send({ email: user.email });
+  const updatedUser = await setAuthCookie(res, user);
+  return res.send({ email: updatedUser ? updatedUser.email : user.email });
 });
 
 app.put('/api/auth', async (req, res) => {
   const { email, password } = req.body || {};
-  const user = getUser('email', email);
+  const user = await DB.getUserByEmail(email);
   if (!user || !(await bcrypt.compare(password || '', user.password))) {
     return res.status(401).send({ msg: 'Unauthorized' });
   }
 
-  setAuthCookie(res, user);
-  return res.send({ email: user.email });
+  const updatedUser = await setAuthCookie(res, user);
+  return res.send({ email: updatedUser ? updatedUser.email : user.email });
 });
 
-app.delete('/api/auth', (req, res) => {
+app.delete('/api/auth', async (req, res) => {
   const token = req.cookies.auth;
-  const user = getUser('token', token);
+  const user = await DB.getUserByToken(token);
   if (user) {
-    clearAuthCookie(res, user);
+    await clearAuthCookie(res, token);
   }
 
   return res.send({});
@@ -157,21 +160,13 @@ app.post('/api/votes/current/vote', authMiddleware, (req, res) => {
 async function createUser(email, password) {
   const passwordHash = await bcrypt.hash(password, 10);
   const user = { email, password: passwordHash };
-  users.push(user);
+  await DB.addUser(user);
   return user;
 }
 
-function getUser(field, value) {
-  if (!value) {
-    return null;
-  }
-
-  return users.find((user) => user[field] === value);
-}
-
-function authMiddleware(req, res, next) {
+async function authMiddleware(req, res, next) {
   const token = req.cookies.auth;
-  const user = getUser('token', token);
+  const user = await DB.getUserByToken(token);
   if (!user) {
     return res.status(401).send({ msg: 'Unauthorized' });
   }
@@ -180,17 +175,19 @@ function authMiddleware(req, res, next) {
   return next();
 }
 
-function setAuthCookie(res, user) {
-  user.token = uuid.v4();
-  res.cookie('auth', user.token, {
+async function setAuthCookie(res, user) {
+  const token = uuid.v4();
+  const updatedUser = await DB.updateUserToken(user.email, token);
+  res.cookie('auth', token, {
     secure: true,
     httpOnly: true,
     sameSite: 'strict',
   });
+  return updatedUser;
 }
 
-function clearAuthCookie(res, user) {
-  delete user.token;
+async function clearAuthCookie(res, token) {
+  await DB.clearUserToken(token);
   res.clearCookie('auth');
 }
 

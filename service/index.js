@@ -3,6 +3,7 @@ const cookieParser = require('cookie-parser');
 const bcrypt = require('bcryptjs');
 const uuid = require('uuid');
 const DB = require('./database');
+const { peerProxy } = require('./peerProxy');
 
 const app = express();
 const port = process.argv.length > 2 ? process.argv[2] : 4000;
@@ -242,6 +243,9 @@ function createDefaultVote(createdBy) {
   };
 }
 
-app.listen(port, () => {
-  console.log(`Service listening on port ${port}`);
+const httpService = app.listen(port, () => {
+  console.log('Service listening on port ' + port);
 });
+
+peerProxy(httpService);
+

@@ -119,6 +119,18 @@ app.post('/api/votes/current', authMiddleware, async (req, res) => {
   };
 
   await DB.saveCurrentVote(currentVote);
+
+  if (wsProxy && typeof wsProxy.broadcastMessage === 'function') {
+    wsProxy.broadcastMessage(
+      buildSystemMessage(req.user.email, `${req.user.email} created a new vote`, {
+        voteId: currentVote.id,
+        question: currentVote.question,
+      })
+    );
+
+    wsProxy.broadcastMessage(buildVoteUpdateMessage(req.user.email, 'Current vote updated', currentVote));
+  }
+
   return res.send(currentVote);
 });
 
@@ -268,5 +280,7 @@ const httpService = app.listen(port, () => {
 });
 
 wsProxy = peerProxy(httpService);
+
+
 
 

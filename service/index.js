@@ -3,12 +3,13 @@ const cookieParser = require('cookie-parser');
 const bcrypt = require('bcryptjs');
 const uuid = require('uuid');
 const DB = require('./database');
-const { peerProxy } = require('./peerProxy');
+const { peerProxy, createSocketMessage, MESSAGE_TYPES } = require('./peerProxy');
 
 const app = express();
 const port = process.argv.length > 2 ? process.argv[2] : 4000;
 
 let currentVote = null;
+let wsProxy = null;
 
 app.use(express.json());
 app.use(cookieParser());
@@ -161,6 +162,25 @@ app.post('/api/votes/current/vote', authMiddleware, async (req, res) => {
   return res.send(currentVote);
 });
 
+function buildSystemMessage(from, text, payload = null) {
+  return createSocketMessage({
+    type: MESSAGE_TYPES.SYSTEM,
+    from,
+    text,
+    payload,
+  });
+}
+
+function buildVoteUpdateMessage(from, text, vote) {
+  return createSocketMessage({
+    type: MESSAGE_TYPES.VOTE_UPDATE,
+    from,
+    text,
+    voteId: vote && vote.id ? vote.id : null,
+    payload: vote || null,
+  });
+}
+
 async function createUser(email, password) {
   const passwordHash = await bcrypt.hash(password, 10);
   const user = { email, password: passwordHash };
@@ -247,5 +267,6 @@ const httpService = app.listen(port, () => {
   console.log('Service listening on port ' + port);
 });
 
-peerProxy(httpService);
+wsProxy = peerProxy(httpService);
+
 

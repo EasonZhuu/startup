@@ -1,5 +1,22 @@
 const { WebSocketServer } = require('ws');
 
+const MESSAGE_TYPES = {
+  JOIN: 'join',
+  SYSTEM: 'system',
+  VOTE_UPDATE: 'vote-update',
+};
+
+function createSocketMessage(message = {}) {
+  return {
+    type: message.type || MESSAGE_TYPES.SYSTEM,
+    from: message.from || 'system',
+    text: message.text || '',
+    voteId: message.voteId || null,
+    updatedAt: message.updatedAt || new Date().toISOString(),
+    payload: message.payload || null,
+  };
+}
+
 function peerProxy(httpServer) {
   const socketServer = new WebSocketServer({ noServer: true });
   const clients = new Set();
@@ -32,15 +49,12 @@ function peerProxy(httpServer) {
         return;
       }
 
-      if (message.type === 'join') {
+      if (message.type === MESSAGE_TYPES.JOIN) {
         broadcastMessage(
           {
-            type: 'system',
+            type: MESSAGE_TYPES.SYSTEM,
             from: message.from || 'Guest',
             text: `${message.from || 'Guest'} joined live updates`,
-            voteId: null,
-            updatedAt: new Date().toISOString(),
-            payload: null,
           },
           webSocket
         );
@@ -70,7 +84,9 @@ function peerProxy(httpServer) {
   });
 
   function broadcastMessage(message, senderSocket = null) {
-    const serialized = JSON.stringify(message);
+    const normalizedMessage = createSocketMessage(message);
+    const serialized = JSON.stringify(normalizedMessage);
+
     clients.forEach((client) => {
       if (client !== senderSocket && client.readyState === client.OPEN) {
         client.send(serialized);
@@ -81,4 +97,8 @@ function peerProxy(httpServer) {
   return { broadcastMessage };
 }
 
-module.exports = { peerProxy };
+module.exports = {
+  peerProxy,
+  createSocketMessage,
+  MESSAGE_TYPES,
+};

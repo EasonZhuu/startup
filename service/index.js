@@ -171,6 +171,22 @@ app.post('/api/votes/current/vote', authMiddleware, async (req, res) => {
   };
 
   await DB.saveCurrentVote(currentVote);
+
+  if (wsProxy && typeof wsProxy.broadcastMessage === 'function') {
+    const selectedOption = currentVote.options.find((option) => option.id === optionId);
+    const optionLabel = selectedOption ? selectedOption.label : optionId;
+
+    wsProxy.broadcastMessage(
+      buildSystemMessage(req.user.email, `${req.user.email} voted for ${optionLabel}`, {
+        voteId: currentVote.id,
+        optionId,
+        optionLabel,
+      })
+    );
+
+    wsProxy.broadcastMessage(buildVoteUpdateMessage(req.user.email, 'Vote totals updated', currentVote));
+  }
+
   return res.send(currentVote);
 });
 
@@ -280,6 +296,7 @@ const httpService = app.listen(port, () => {
 });
 
 wsProxy = peerProxy(httpService);
+
 
 
 

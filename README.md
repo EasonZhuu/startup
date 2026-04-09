@@ -182,14 +182,15 @@ For this deliverable I did the following. I checked the box `[x]` and added a de
 
 For this deliverable I did the following. I checked the box `[x]` and added a description for things I completed.
 
-- [ ] **Backend listens for WebSocket connection** - I did not complete this part of the deliverable.
-- [ ] **Frontend makes WebSocket connection** - I did not complete this part of the deliverable.
-- [ ] **Data sent over WebSocket connection** - I did not complete this part of the deliverable.
-- [ ] **WebSocket data displayed** - I did not complete this part of the deliverable.
-- [ ] **Application is fully functional** - I did not complete this part of the deliverable.
+- [x] **Backend listens for WebSocket connection** - Added a WebSocket server on `/ws` using `ws` and mounted it from `service/index.js`.
+- [x] **Frontend makes WebSocket connection** - Added a frontend WebSocket client helper and connected it from the New Vote page.
+- [x] **Data sent over WebSocket connection** - Added `join`, `system`, and `vote-update` message flow with a shared message structure.
+- [x] **WebSocket data displayed** - Live updates are rendered in the UI and current vote data updates in real time.
+- [x] **Application is fully functional** - Removed mock realtime placeholder behavior and replaced it with real WebSocket updates and reconnect handling.
 
-
-new marks
-
-111
-
+**Summary of WebSocket work completed:**
+- Added `service/peerProxy.js` to handle connections, heartbeat, and broadcasts.
+- Broadcasts now fire when creating a vote and when voting/changing vote.
+- Added `src/websocketClient.js` with `connect/send/onMessage/close` helpers.
+- Replaced New Vote polling with WebSocket realtime updates.
+- Added `/ws` proxy in `vite.config.js` for local development.

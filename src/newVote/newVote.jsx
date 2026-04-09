@@ -8,6 +8,7 @@ export function NewVote({ userName, isLoggedIn, onLogin, onRegister, onLogout })
   const [currentVote, setCurrentVote] = React.useState(null);
   const [voteMessage, setVoteMessage] = React.useState('');
   const [liveUpdates, setLiveUpdates] = React.useState([]);
+  const [wsStatus, setWsStatus] = React.useState('reconnecting');
   const [draftQuestion, setDraftQuestion] = React.useState('');
   const [draftOptions, setDraftOptions] = React.useState(['', '', '', '']);
   const [draftMessage, setDraftMessage] = React.useState('');
@@ -43,13 +44,55 @@ export function NewVote({ userName, isLoggedIn, onLogin, onRegister, onLogout })
   }, []);
 
   React.useEffect(() => {
+    let cancelled = false;
+    let reconnectTimerId = null;
     const websocketClient = createWebSocketClient();
 
+    function scheduleReconnect() {
+      if (cancelled) {
+        return;
+      }
+
+      setWsStatus('reconnecting');
+
+      if (reconnectTimerId) {
+        clearTimeout(reconnectTimerId);
+      }
+
+      reconnectTimerId = setTimeout(() => {
+        if (!cancelled) {
+          websocketClient.connect();
+        }
+      }, 2000);
+    }
+
     websocketClient.onOpen(() => {
+      if (cancelled) {
+        return;
+      }
+
+      setWsStatus('connected');
       websocketClient.send({
         type: 'join',
         from: (userName || 'Guest').trim() || 'Guest',
       });
+    });
+
+    websocketClient.onClose(() => {
+      if (cancelled) {
+        return;
+      }
+
+      setWsStatus('disconnected');
+      scheduleReconnect();
+    });
+
+    websocketClient.onError(() => {
+      if (cancelled) {
+        return;
+      }
+
+      scheduleReconnect();
     });
 
     websocketClient.onMessage((message) => {
@@ -69,9 +112,14 @@ export function NewVote({ userName, isLoggedIn, onLogin, onRegister, onLogout })
       }
     });
 
+    setWsStatus('reconnecting');
     websocketClient.connect();
 
     return () => {
+      cancelled = true;
+      if (reconnectTimerId) {
+        clearTimeout(reconnectTimerId);
+      }
       websocketClient.close();
     };
   }, [userName]);
@@ -412,12 +460,15 @@ export function NewVote({ userName, isLoggedIn, onLogin, onRegister, onLogout })
           <section className="col-12 col-lg-6">
             <div className="card shadow-sm h-auto">
               <div className="card-body">
-                <h3 className="card-title h5">Live Updates</h3>
-                <div id="realtime-placeholder" className="alert alert-warning mb-0">
+                <h3 className="card-title h5 d-flex align-items-center justify-content-between">
+                  <span>Live Updates</span>
+                  <span className={`badge ${getWsStatusBadgeClass(wsStatus)}`}>{getWsStatusLabel(wsStatus)}</span>
+                </h3>
+                <div id="realtime-placeholder" className={`alert ${getWsStatusAlertClass(wsStatus)} mb-0`}>
                   {liveUpdates.length ? (
                     liveUpdates.map((update, index) => <div key={`${index}-${update}`}>{update}</div>)
                   ) : (
-                    'Waiting for real-time vote updates (mock WebSocket)...'
+                    getWsStatusPlaceholder(wsStatus)
                   )}
                 </div>
               </div>
@@ -429,6 +480,54 @@ export function NewVote({ userName, isLoggedIn, onLogin, onRegister, onLogout })
   );
 }
 
+
+function getWsStatusLabel(status) {
+  if (status === 'connected') {
+    return 'connected';
+  }
+
+  if (status === 'disconnected') {
+    return 'disconnected';
+  }
+
+  return 'reconnecting';
+}
+
+function getWsStatusBadgeClass(status) {
+  if (status === 'connected') {
+    return 'bg-success';
+  }
+
+  if (status === 'disconnected') {
+    return 'bg-danger';
+  }
+
+  return 'bg-warning text-dark';
+}
+
+function getWsStatusAlertClass(status) {
+  if (status === 'connected') {
+    return 'alert-success';
+  }
+
+  if (status === 'disconnected') {
+    return 'alert-danger';
+  }
+
+  return 'alert-warning';
+}
+
+function getWsStatusPlaceholder(status) {
+  if (status === 'connected') {
+    return 'Connected. Waiting for new live vote updates...';
+  }
+
+  if (status === 'disconnected') {
+    return 'Disconnected from live updates. Trying to reconnect...';
+  }
+
+  return 'Reconnecting to live updates...';
+}
 async function safeJson(response) {
   try {
     return await response.json();
@@ -436,4 +535,6 @@ async function safeJson(response) {
     return {};
   }
 }
+
+
 

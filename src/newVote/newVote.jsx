@@ -1,4 +1,5 @@
 import React from 'react';
+import { createWebSocketClient } from '../websocketClient';
 import './newVote.css';
 
 export function NewVote({ userName, isLoggedIn, onLogin, onRegister, onLogout }) {
@@ -42,40 +43,38 @@ export function NewVote({ userName, isLoggedIn, onLogin, onRegister, onLogout })
   }, []);
 
   React.useEffect(() => {
-    let cancelled = false;
+    const websocketClient = createWebSocketClient();
 
-    const intervalId = setInterval(async () => {
-      try {
-        const response = await fetch('/api/votes/current');
-        const data = await safeJson(response);
-        if (!response.ok || !data || !data.id || cancelled) {
-          return;
-        }
+    websocketClient.onOpen(() => {
+      websocketClient.send({
+        type: 'join',
+        from: (userName || 'Guest').trim() || 'Guest',
+      });
+    });
 
-        setCurrentVote((previousVote) => {
-          if (!previousVote) {
-            return data;
-          }
-
-          if (previousVote.updatedAt !== data.updatedAt) {
-            const timeText = new Date().toLocaleTimeString();
-            setLiveUpdates((previousUpdates) =>
-              [`${timeText} - Live data synced from service`, ...previousUpdates].slice(0, 10)
-            );
-            return data;
-          }
-
-          return previousVote;
-        });
-      } catch {
+    websocketClient.onMessage((message) => {
+      if (!message || typeof message !== 'object') {
+        return;
       }
-    }, 5000);
+
+      const timeText = new Date().toLocaleTimeString();
+      const updateText = message.text || 'Live update received';
+
+      if (message.type === 'vote-update' && message.payload) {
+        setCurrentVote(message.payload);
+      }
+
+      if (message.type === 'vote-update' || message.type === 'system') {
+        setLiveUpdates((previousUpdates) => [`${timeText} - ${updateText}`, ...previousUpdates].slice(0, 10));
+      }
+    });
+
+    websocketClient.connect();
 
     return () => {
-      cancelled = true;
-      clearInterval(intervalId);
+      websocketClient.close();
     };
-  }, []);
+  }, [userName]);
 
   function getPasswordValue() {
     return String(document.getElementById('password-box')?.value || '');
@@ -437,3 +436,4 @@ async function safeJson(response) {
     return {};
   }
 }
+

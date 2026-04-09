@@ -17,6 +17,15 @@ function createSocketMessage(message = {}) {
   };
 }
 
+function sendMessageToSocket(webSocket, message) {
+  if (!webSocket || webSocket.readyState !== webSocket.OPEN) {
+    return;
+  }
+
+  const normalizedMessage = createSocketMessage(message);
+  webSocket.send(JSON.stringify(normalizedMessage));
+}
+
 function peerProxy(httpServer) {
   const socketServer = new WebSocketServer({ noServer: true });
   const clients = new Set();
@@ -50,11 +59,22 @@ function peerProxy(httpServer) {
       }
 
       if (message.type === MESSAGE_TYPES.JOIN) {
+        const joinName = String(message.from || 'Guest').trim() || 'Guest';
+        webSocket.userName = joinName;
+
+        sendMessageToSocket(webSocket, {
+          type: MESSAGE_TYPES.SYSTEM,
+          from: 'system',
+          text: `Connected to live updates as ${joinName}`,
+          payload: { joined: true },
+        });
+
         broadcastMessage(
           {
             type: MESSAGE_TYPES.SYSTEM,
-            from: message.from || 'Guest',
-            text: `${message.from || 'Guest'} joined live updates`,
+            from: joinName,
+            text: `${joinName} joined live updates`,
+            payload: { joined: true },
           },
           webSocket
         );
